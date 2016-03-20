@@ -98,7 +98,7 @@ class Player:
     def __init__(self, name, money=1000):
         self.name = name
         self.money = money 
-        self.bet = 0 
+        self.bet = 5 
         self.hand = Hand([], self.bet)
         self.split_hand = Hand([], self.bet)
 
@@ -228,7 +228,12 @@ class Hand:
         self.hard_value = 0
         self.bust = False
         self.blackjack = False
-        self.bet = 0
+        self.bet = bet
+
+    def set_bet(self, bet):
+        print "Current bet %s"%(self.bet)
+        self.bet = bet 
+        print "NEW BET %s"%(self.bet)
 
     def set_has_ace(self, card_array):
         for x in card_array:
