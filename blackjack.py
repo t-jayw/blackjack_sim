@@ -1,28 +1,18 @@
 
 # TODO
-# can't handle A,A split (does soft look up)
-
-# TODO
 # hand.compute_score shouldn't fail on 0 cards in array
 
-# TODO
-# splits need hard look up down to 3 and 4
-# SPLIT HAND 1
-# Looking up HARD
-# Look up failed for
-#  Value: 4
-#  Lookup: HARD
-# PLAYER DECIDES TO None
+# get Game.win_lose to handle splits/multiple hands
 
-# TODO
-# Have game decide winners and payout 
+# doesn't support PUSH
 
-# Splits work sorta!
-# Doubling works!
-# Softs go to -1 on bust to allow hard lookup 
+# implement a payout method in Game
+
+# figure out what happens when it's time to shuffle
 
 # blackjacky.py
 import random
+import time
 
 H = 'hit'
 S = 'stand'
@@ -38,10 +28,11 @@ player_logic_soft_totals = {
     '16': {'2':H,'3':H,'4':D,'5':D,'6':D,'7':H,'8':H,'9':H,'10':H,'1':H},
     '15': {'2':H,'3':H,'4':D,'5':D,'6':D,'7':H,'8':H,'9':H,'10':H,'1':H},
     '14': {'2':H,'3':H,'4':H,'5':D,'6':D,'7':H,'8':H,'9':H,'10':H,'1':H},
-    '13': {'2':H,'3':H,'4':H,'5':H,'6':D,'7':H,'8':H,'9':H,'10':H,'1':H}
+    '13': {'2':H,'3':H,'4':H,'5':H,'6':D,'7':H,'8':H,'9':H,'10':H,'1':H},
+    '12': {'2':Sp,'3':Sp,'4':Sp,'5':Sp,'6':Sp,'7':Sp,'8':Sp,'9':Sp,'10':Sp,'1':Sp}
 }
 player_logic_split = {
-    'A': {'2':Sp,'3':Sp,'4':Sp,'5':Sp,'6':Sp,'7':Sp,'8':Sp,'9':Sp,'10':Sp,'1':Sp},
+    'A': {'2':Sp,'3':Sp,'4':Sp,'5':Sp,'6':Sp,'7':Sp,'8':Sp,'9':Sp,'10':Sp,'1':Sp}, 
     'K': {'2':S,'3':S,'4':S,'5':S,'6':S,'7':S,'8':S,'9':S,'10':S,'1':S},
     'Q': {'2':S,'3':S,'4':S,'5':S,'6':S,'7':S,'8':S,'9':S,'10':S,'1':S},
     'J': {'2':S,'3':S,'4':S,'5':S,'6':S,'7':S,'8':S,'9':S,'10':S,'1':S},
@@ -72,7 +63,10 @@ player_logic_hard_totals = {
     '8': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
     '7': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
     '6': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
-    '5': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H}
+    '5': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
+    '4': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
+    '3': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H},
+    '2': {'2':H,'3':H,'4':H,'5':H,'6':H,'7':H,'8':H,'9':H,'10':H,'1':H}
 }
 
 CARD_VALS = [2,3,4,5,6,7,8,9,10,'J','Q','K','A']
@@ -183,13 +177,24 @@ class Hand:
         self.set_blackjack()
         self.set_bust()
 
+    def ret_hand_total(self):
+        if self.bust:
+            return -1
+        else: 
+            return max(self.soft_value, self.hard_value)
+
 class Dealer:
     def __init__(self):
         self.hand = Hand([], None)
+        self.name = 'Jimmy'
 
     def up_card(self):
         if len(self.hand.card_array) > 1:
             return str(self.hand.card_array[1].value)
+
+    def clear_hands(self):
+        self.hand = Hand([], None)
+        self.split_hand = None
 
 class Player:
     def __init__(self, name, money=1000):
@@ -213,21 +218,21 @@ class Player:
             decision = None
         return decision
 
-    def decide_play(self, hand, dealer):
-        num_cards = len(hand.card_array)
+    def decide_play(self, dealer):
+        num_cards = len(self.hand.card_array)
         dealer_up = dealer.up_card()
         decision = None
 
-        hand.compute_score()
+        self.hand.compute_score()
 
-        if hand.soft_value > 0:
-            decision = self.check_strategy(hand.soft_value, dealer_up, player_logic_soft_totals, "SOFT")
-        elif hand.pair:
-            decision = self.check_strategy(hand.pair, dealer_up, player_logic_split, "SPLIT")
+        if self.hand.soft_value > 0:
+            decision = self.check_strategy(self.hand.soft_value, dealer_up, player_logic_soft_totals, "SOFT")
+        elif self.hand.pair:
+            decision = self.check_strategy(self.hand.pair, dealer_up, player_logic_split, "SPLIT")
         else:
-            decision = self.check_strategy(hand.hard_value, dealer_up, player_logic_hard_totals, "HARD")
+            decision = self.check_strategy(self.hand.hard_value, dealer_up, player_logic_hard_totals, "HARD")
         
-        print "PLAYER DECIDES TO %s "%(decision)
+        print "PLAYER DECIDES TO %s"%(decision)
         return decision
 
     def split(self):
@@ -237,6 +242,10 @@ class Player:
         print "SPLIT PSLIT\n"
         print len(self.split_hand.card_array)
         print len(self.hand.card_array)
+
+    def clear_hands(self):
+        self.hand = Hand([], self.bet)
+        self.split_hand = None
 
 class Game:
     def __init__(self, dealer, players, shoe):
@@ -266,13 +275,14 @@ class Game:
         hand.compute_score()
 
         if not(hand.bust or hand.blackjack):
-            d = player.decide_play(hand, self.dealer)
+            d = player.decide_play(self.dealer)
             if d == H:
                 self.deal_player(hand)
                 self.play_hand(player, hand)
             elif d == S:
-                print "%s stands with \n"%(player.name)
+                print "%s stands with"%(player.name)
                 print ' '.join([str(x.card) for x in hand.card_array])
+                print hand.ret_hand_total()
             elif d == D:
                 hand.set_bet(hand.bet * 2)
                 print "%s has doubled on %s"%(player.name,
@@ -283,8 +293,10 @@ class Game:
                 hand = player.hand
                 split_hand = player.split_hand
                 print "\t\n SPLIT HAND 1"
+                self.deal_player(hand)
                 self.play_hand(player, hand)
                 print "\t\n SPLIT HAND 2"
+                self.deal_player(split_hand)
                 self.play_hand(player, split_hand)
         elif hand.bust:
             print 'player bust with %s'%(' '.join([str(x.card) for x in player.hand.card_array]))
@@ -304,7 +316,27 @@ class Game:
             if dealer.hand.blackjack:
                 print 'dealer blackjack'
             elif dealer.hand.bust:
-                print 'dealer bust'   
+                print 'dealer bust' 
+
+    def win_lose(self, dealer, player):
+        winner = None
+        loser = None
+
+        if player.hand.bust:
+            winner, loser = dealer, player
+        elif dealer.hand.bust:
+            winner, loser = player, dealer
+        else:
+            if dealer.hand.ret_hand_total() > player.hand.ret_hand_total():
+                winner, loser = dealer, player
+            else: winner, loser = player, dealer
+
+        print "%s has won with %d"%(winner.name, winner.hand.ret_hand_total())
+        print "%s has lost with %d"%(loser.name, loser.hand.ret_hand_total())
+        print "----\n"*2
+
+        return winner
+
 
 # TESTING SOFT COMPUTE SCORE LOGIC 
 
@@ -316,26 +348,30 @@ def check_scores(player):
     print player.hand.hard_value
 
 foo = Shoe(8)
+foo.shuffle()
 tyler = Player('tyler')
 d = Dealer()
-bar = Game(d, [tyler], foo)
 
-tyler.hand.accept_new_card(card_test_array[2])
-tyler.hand.accept_new_card(card_test_array['A'])
-tyler.hand.accept_new_card(card_test_array[3])
-tyler.hand.accept_new_card(card_test_array[8])
-tyler.hand.accept_new_card(card_test_array[6])
+if __name__ == "__main__":
+    tyler_win = 0
+    dealer_win = 0
+    for x in range(1,55):
+    #GENERAL TEST GAME
+        bar = Game(d, [tyler], foo)
+        bar.start_hand()
+        for x in bar.players:
+            bar.play_hand(x, x.hand)
+        bar.play_dealer(bar.dealer)
+        for x in bar.players:
+            winner = bar.win_lose(d, x)
+            if winner.name == 'tyler':
+                tyler_win += 1
+            else: dealer_win += 1
+        d.clear_hands()
+        for x in bar.players:
+            x.clear_hands()
+    print 'tyler %d'%(tyler_win)
+    print 'dealer %d'%(dealer_win)
 
-# GENERAL TEST GAME
-# foo = Shoe(8)
-# foo.shuffle()
-# tyler = Player('tyler')
-# d = Dealer()
-# bar = Game(d, [tyler], foo)
-# bar.start_hand()
-# for x in bar.players:
-#     bar.play_hand(x, x.hand)
-# bar.play_dealer(bar.dealer)
-
-# p = bar.players[0]
-# d = bar.dealer 
+p = bar.players[0]
+d = bar.dealer 
