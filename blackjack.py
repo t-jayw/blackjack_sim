@@ -1,9 +1,9 @@
-# TODO
-# fucks up soft counts w/ multiple A e.g. 
-# player bust with 2 A 3 8 6 A K -- didn't register as a soft 21, thought it was a soft 16 and hit?
 
 # TODO
 # can't handle A,A split (does soft look up)
+
+# TODO
+# hand.compute_score shouldn't fail on 0 cards in array
 
 # TODO
 # splits need hard look up down to 3 and 4
@@ -19,6 +19,7 @@
 
 # Splits work sorta!
 # Doubling works!
+# Softs go to -1 on bust to allow hard lookup 
 
 # blackjacky.py
 import random
@@ -164,7 +165,7 @@ class Hand:
         self.hard_value = sum(x.value for x in self.card_array)
 
     def set_soft_value(self):
-        if (self.hard_value <= 11) & self.check_ace():
+        if self.check_ace():
             if self.hard_value + 10 > 21:
                 self.soft_value = -1
             else:
@@ -173,7 +174,6 @@ class Hand:
     def accept_new_card(self, card): 
         self.card_array.append(card)
         self.compute_score()
-
 
     def compute_score(self):
         self.set_has_ace()
@@ -306,15 +306,36 @@ class Game:
             elif dealer.hand.bust:
                 print 'dealer bust'   
 
+# TESTING SOFT COMPUTE SCORE LOGIC 
+
+
+card_test_array = {x: Card(x) for x in CARD_VALS}
+def check_scores(player):
+    player.hand.compute_score()
+    print player.hand.soft_value
+    print player.hand.hard_value
+
 foo = Shoe(8)
-foo.shuffle()
 tyler = Player('tyler')
 d = Dealer()
 bar = Game(d, [tyler], foo)
-bar.start_hand()
-for x in bar.players:
-    bar.play_hand(x, x.hand)
-bar.play_dealer(bar.dealer)
 
-p = bar.players[0]
-d = bar.dealer 
+tyler.hand.accept_new_card(card_test_array[2])
+tyler.hand.accept_new_card(card_test_array['A'])
+tyler.hand.accept_new_card(card_test_array[3])
+tyler.hand.accept_new_card(card_test_array[8])
+tyler.hand.accept_new_card(card_test_array[6])
+
+# GENERAL TEST GAME
+# foo = Shoe(8)
+# foo.shuffle()
+# tyler = Player('tyler')
+# d = Dealer()
+# bar = Game(d, [tyler], foo)
+# bar.start_hand()
+# for x in bar.players:
+#     bar.play_hand(x, x.hand)
+# bar.play_dealer(bar.dealer)
+
+# p = bar.players[0]
+# d = bar.dealer 
