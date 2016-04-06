@@ -373,5 +373,5 @@ if __name__ == "__main__":
     print 'tyler %d'%(tyler_win)
     print 'dealer %d'%(dealer_win)
 
-p = bar.players[0]
-d = bar.dealer 
+    p = bar.players[0]
+    d = bar.dealer 
