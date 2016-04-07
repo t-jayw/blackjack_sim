@@ -4,7 +4,8 @@
 
 # get Game.win_lose to handle splits/multiple hands
 
-# doesn't support PUSH
+# doesn't support PUSH well. need more robust handling of decisions
+# see ln 15
 
 # implement a payout method in Game
 
@@ -333,12 +334,18 @@ class Game:
         else:
             if dealer.hand.ret_hand_total() > player.hand.ret_hand_total():
                 winner, loser = dealer, player
-            else: winner, loser = player, dealer
+            elif dealer.hand.ret_hand_total == player.hand.ret_hand_total():
+                winner = None
+                loser = None
+            elif dealer.hand.ret_hand_total() < player.hand.ret_hand_total(): 
+                winner, loser = player, dealer
 
-        print "%s has won with %d"%(winner.name, winner.hand.ret_hand_total())
-        print "%s has lost with %d"%(loser.name, loser.hand.ret_hand_total())
-        print "----\n"*2
-
+        if winner:
+            print "%s has won with %d"%(winner.name, winner.hand.ret_hand_total())
+            print "%s has lost with %d"%(loser.name, loser.hand.ret_hand_total())
+            print "----\n"*2
+        else:
+            print "%s PUSHes with %d"%(player.name, player.hand.ret_hand_total())
         return winner
 
 
@@ -368,7 +375,7 @@ if __name__ == "__main__":
         bar.play_dealer(bar.dealer)
         for x in bar.players:
             winner = bar.win_lose(d, x)
-            if winner.name == 'tyler':
+            if winner and winner.name == 'tyler':
                 tyler_win += 1
             else: dealer_win += 1
         d.clear_hands()
