@@ -15,6 +15,8 @@
 # Have a decision class for handling strategy sets? -- all the 
 # game decision logic in Player is shitty
 
+# move 'win counter' into player class and out of the test-game loop
+
 # blackjacky.py
 import random
 import time
@@ -347,9 +349,6 @@ class Game:
         else:
             print "%s PUSHes with %d"%(player.name, player.hand.ret_hand_total())
         return winner
-
-
-# TESTING SOFT COMPUTE SCORE LOGIC 
 
 
 card_test_array = {x: Card(x) for x in CARD_VALS}
