@@ -10,6 +10,10 @@
 
 # figure out what happens when it's time to shuffle
 
+# Move strategy-sets into separate class?
+# Have a decision class for handling strategy sets? -- all the 
+# game decision logic in Player is shitty
+
 # blackjacky.py
 import random
 import time
